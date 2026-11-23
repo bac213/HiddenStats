@@ -39,3 +39,7 @@ dotnet build -c Release HiddenStats.Client/HiddenStats.Client.csproj
 
 输出 `HiddenStats.Client/bin/Release/HiddenStats.Client.dll`，复制到 `<SPT 根目录>/BepInEx/plugins/`。
 开发说明见 [AGENTS.md](AGENTS.md)。
+
+## 许可证
+
+本项目以 **CC0 1.0 Universal** 协议放弃版权并奉献至公共领域，详见 [LICENSE](LICENSE)。
