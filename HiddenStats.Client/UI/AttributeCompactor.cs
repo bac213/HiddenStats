@@ -112,12 +112,17 @@ internal static class AttributeCompactor
                 grid.childAlignment = TextAnchor.UpperLeft;
                 grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
                 grid.constraintCount = columns;
+                EnsureFlexibleWidth(container);
                 state.Grid = grid;
                 state.Columns = columns;
                 state.Mode = CompactState.GridMode.FitColumns;
             }
             else if (group is GridLayoutGroup existing)
             {
+                if (existing is FlexibleGridLayoutGroup)
+                {
+                    EnsureFlexibleWidth(container);
+                }
                 state.Grid = existing;
                 state.Mode = CompactState.GridMode.HeightOnly;
             }
@@ -203,6 +208,27 @@ internal static class AttributeCompactor
             return;
         }
         RowShrinker.Shrink(row, orig, Mathf.Round(orig * heightScale), fontScale, drivenByGrid: false);
+    }
+
+    /// <summary>
+    /// <see cref="FlexibleGridLayoutGroup"/> reports 0 for both <c>minWidth</c> and
+    /// <c>preferredWidth</c>, so a parent VerticalLayoutGroup with
+    /// <c>childForceExpandWidth = false</c> (vanilla <c>DescriptionPanel</c> in both the handbook
+    /// and a non-scroll-merged inspect window) collapses it to width 0 unless a
+    /// <see cref="LayoutElement"/> sets <c>flexibleWidth = 1</c> (matching vanilla
+    /// <c>_compactPanel</c>).
+    /// </summary>
+    internal static void EnsureFlexibleWidth(RectTransform rt)
+    {
+        LayoutElement le = rt.GetComponent<LayoutElement>();
+        if (le == null)
+        {
+            le = rt.gameObject.AddComponent<LayoutElement>();
+        }
+        if (le.flexibleWidth <= 0f)
+        {
+            le.flexibleWidth = 1f;
+        }
     }
 
     /// <summary>Keeps grid cells sized to the reduced row height and the container width.</summary>

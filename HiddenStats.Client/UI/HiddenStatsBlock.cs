@@ -133,8 +133,11 @@ internal static class HiddenStatsBlock
         GridRefs compact = holder != null ? holder.Compact : null;
         if (rows == null || rows.Count == 0)
         {
-            SetActive(bars, false);
-            SetActive(compact, false);
+            bool changed = SetActive(bars, false) | SetActive(compact, false);
+            if (changed)
+            {
+                RebuildLayout(panel);
+            }
             return;
         }
 
@@ -165,6 +168,7 @@ internal static class HiddenStatsBlock
         SimpleTooltip tooltip = TooltipField?.GetValue(panel) as SimpleTooltip;
         FillBars(bars, barTemplate, barRows, tooltip);
         FillCompact(compact, compactTemplate, textRows, tooltip);
+        RebuildLayout(panel);
 
         if (!_loggedOnce)
         {
@@ -356,6 +360,10 @@ internal static class HiddenStatsBlock
         rt.SetParent(anchor.parent, false);
         rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
+        if (anchor is RectTransform anchorRt && anchorRt.rect.width > 1f)
+        {
+            rt.sizeDelta = new Vector2(anchorRt.rect.width, 0f);
+        }
 
         // Mirror the vanilla neighbour: the (compacted) bar grid / the compact grid.
         GridLayoutGroup vanillaGrid = anchor.GetComponent<GridLayoutGroup>();
@@ -382,14 +390,18 @@ internal static class HiddenStatsBlock
 
         var le = go.AddComponent<LayoutElement>();
         le.minWidth = 0f;
+        le.flexibleWidth = 1f;
 
         var state = go.AddComponent<AttributeCompactor.CompactState>();
         state.Grid = grid;
         state.Columns = columns;
         state.Mode = AttributeCompactor.CompactState.GridMode.FitColumns;
         state.OriginalRowHeight = VanillaRowHeight;
+        float fallbackHeight = HiddenStatsPlugin.CompactAttributes.Value
+            ? Mathf.Round(VanillaRowHeight * HiddenStatsPlugin.RowHeightScale.Value)
+            : VanillaRowHeight;
         state.TargetRowHeight = vanillaState != null && vanillaState.TargetRowHeight > 1f ? vanillaState.TargetRowHeight
-            : vanillaGrid != null && vanillaGrid.cellSize.y > 1f ? vanillaGrid.cellSize.y : VanillaRowHeight;
+            : vanillaGrid != null && vanillaGrid.cellSize.y > 1f ? vanillaGrid.cellSize.y : fallbackHeight;
         grid.cellSize = new Vector2(100f, state.TargetRowHeight);
 
         var refs = go.AddComponent<GridRefs>();
@@ -433,11 +445,20 @@ internal static class HiddenStatsBlock
         }
     }
 
-    private static void SetActive(GridRefs grid, bool active)
+    private static bool SetActive(GridRefs grid, bool active)
     {
         if (grid != null && grid.gameObject.activeSelf != active)
         {
             grid.gameObject.SetActive(active);
+            return true;
         }
+        return false;
+    }
+
+    private static void RebuildLayout(ItemSpecificationPanel panel)
+    {
+        InfoWindow window = panel.GetComponentInParent<InfoWindow>(true);
+        RectTransform root = window != null ? (RectTransform)window.transform : (RectTransform)panel.transform;
+        LayoutRebuilder.ForceRebuildLayoutImmediate(root);
     }
 }

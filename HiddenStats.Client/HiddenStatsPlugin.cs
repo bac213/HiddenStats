@@ -12,7 +12,7 @@ public sealed class HiddenStatsPlugin : BaseUnityPlugin
 {
     public const string PluginGuid = "com.spt.hiddenstats.client";
     public const string PluginName = "HiddenStats";
-    public const string PluginVersion = "0.1.0";
+    public const string PluginVersion = "0.1.1";
 
     internal static ManualLogSource Log { get; private set; }
 
